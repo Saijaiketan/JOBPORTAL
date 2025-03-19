@@ -10,10 +10,10 @@ if (!localStorage.getItem('pendingJobs')) {
 if (!localStorage.getItem('applications')) {
     localStorage.setItem('applications', JSON.stringify([]));
 }
+
 if (!localStorage.getItem('deletedApplications')) {
     localStorage.setItem('deletedApplications', JSON.stringify([]));
 }
-
 
 // Function to display approved job listings
 function displayJobs() {
@@ -47,7 +47,6 @@ function submitJob(event) {
     event.target.reset();
 }
 
-
 // Function to display pending jobs in admin panel
 function displayPendingJobs() {
     const pendingJobsDiv = document.getElementById('pending-jobs');
@@ -64,8 +63,6 @@ function displayPendingJobs() {
         `).join('');
     }
 }
-
-
 
 // Function to approve a job
 function approveJob(index) {
@@ -143,7 +140,10 @@ async function submitApplication(event) {
             status: 'pending' // Initially, set the application status to 'pending'
         });
         localStorage.setItem('applications', JSON.stringify(applications));
-        alert('Application submitted successfully');
+
+        // Show a confirmation popup
+        showPopup('Application submitted successfully!');
+
         event.target.reset();
     } catch (error) {
         console.error('Error processing file:', error);
@@ -167,7 +167,7 @@ function displayJobApplications() {
                     <p><strong>Email:</strong> ${app.email}</p>
                     <p><strong>Status:</strong> ${app.status || 'Pending'}</p>
                     <p><strong>Resume:</strong> 
-                        <a href="${app.resume}" target="_blank" download="resume.pdf">View Resume</a>
+                        <a href="#" onclick="createDownloadLink('${app.resume}', 'resume.pdf')">View Resume</a>
                     </p>
                     ${app.status === 'pending' ? `
                         <button onclick="updateApplicationStatus(${index}, 'accepted')" class="btn btn-success">Accept</button>
@@ -179,7 +179,14 @@ function displayJobApplications() {
     }
 }
 
-
+function createDownloadLink(base64String, fileName) {
+    const link = document.createElement('a');
+    link.href = base64String;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 // Function to update application status (Accepted/Declined)
 function updateApplicationStatus(index, status) {
@@ -188,8 +195,6 @@ function updateApplicationStatus(index, status) {
     localStorage.setItem('applications', JSON.stringify(applications));
     displayJobApplications(); // Refresh the applications list
 }
-
-
 
 // Function to delete application and move it to deleted list
 function deleteApplication(index) {
@@ -231,12 +236,6 @@ function displayDeletedApplications() {
     }
 }
 
-
-// Function to toggle deleted applications visibility
-function toggleDeletedApplications() {
-    displayDeletedApplications(); // Ensure the list is refreshed each time it's opened
-}
-
 // Function to toggle deleted applications visibility
 function toggleDeletedApplications() {
     displayDeletedApplications(); // Ensure the list is refreshed each time it's opened
@@ -247,29 +246,13 @@ function searchJobs() {
     const query = document.getElementById('job-search').value.toLowerCase();
     const jobListings = document.getElementById('job-list');
 
-     // Simulating a search function. Here, you could filter actual job listings
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
     const filteredJobs = jobs.filter(job => 
         job.title.toLowerCase().includes(query) || 
         job.company.toLowerCase().includes(query) || 
         job.description.toLowerCase().includes(query)
     );
-    // Update job listings dynamically (if you want instant filtering)
-    jobListings.innerHTML = filteredJobs.map(job => `
-        <div class="job-card">
-            <h3>${job.title}</h3>
-            <p><strong>Company:</strong> ${job.company}</p>
-            <p>${job.description}</p>
-            <a href="apply.html?id=${job.id}" class="btn btn-apply">Apply Now</a>
-        </div>
-    `).join('');
 
-    displayFilteredJobs(filteredJobs);
-}
-
-// Function to display filtered job listings
-function displayFilteredJobs(filteredJobs) {
-    const jobListings = document.getElementById('job-list');
     jobListings.innerHTML = filteredJobs.map(job => `
         <div class="job-card">
             <h3>${job.title}</h3>
@@ -280,31 +263,19 @@ function displayFilteredJobs(filteredJobs) {
     `).join('');
 }
 
-// In search-results.html page, capture the query parameter
-document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('query') || ''; // Default to empty if no query
-
-    // Now, filter jobs based on the search query
-    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    const filteredJobs = jobs.filter(job => 
-        job.title.toLowerCase().includes(query.toLowerCase()) || 
-        job.company.toLowerCase().includes(query.toLowerCase()) || 
-        job.description.toLowerCase().includes(query.toLowerCase())
-    );
-
-    // Display filtered jobs
-    const jobListings = document.getElementById('job-list');
-    jobListings.innerHTML = filteredJobs.map(job => `
-        <div class="job-card">
-            <h3>${job.title}</h3>
-            <p><strong>Company:</strong> ${job.company}</p>
-            <p>${job.description}</p>
-            <a href="apply.html?id=${job.id}" class="btn btn-apply">Apply Now</a>
-        </div>
-    `).join('');
-});
-
+// Function to show the popup
+function showPopup(message) {
+    const popup = document.getElementById('popup');
+    const popupMessage = document.getElementById('popup-message');
+    
+    popupMessage.textContent = message;
+    popup.style.display = 'block';
+    
+    // Close popup after 3 seconds
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 3000);
+}
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -322,5 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const applicationForm = document.getElementById('application-form');
     if (applicationForm) {
         applicationForm.addEventListener('submit', submitApplication);
+    }
+
+    const jobSearchInput = document.getElementById('job-search');
+    if (jobSearchInput) {
+        jobSearchInput.addEventListener('input', searchJobs);
     }
 });
